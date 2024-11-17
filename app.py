@@ -10,6 +10,10 @@ load_dotenv()
 app = Flask(__name__)
 
 google_api_key = os.getenv("GOOGLE_API_KEY")
+if not google_api_key:
+    raise EnvironmentError("GOOGLE_API_KEY not found")
+
+search_history = []
 
 @app.route('/')
 def home():
@@ -21,9 +25,12 @@ def generate_api():
         try:
             req_body = request.get_json()
             content = req_body.get("contents")
+            
+            search_history.append(content)
+            
             model = ChatGoogleGenerativeAI(model=req_body.get("model"))
             message = HumanMessage(
-                content=content
+                content = content
             )
             response = model.stream([message])
             def stream():
@@ -33,7 +40,20 @@ def generate_api():
             return stream(), {'Content-Type': 'text/event-stream'}
 
         except Exception as e:
-            return jsonify({ "error": str(e) })
+            return jsonify({ "error": str(e) }), 500
+        
+@app.route("/api/searches", methods=["GET"])
+def get_previous_searches():
+    """Retrieve the last 10 searches."""
+    return jsonify(search_history[-10:])  # Return the last 10 searches
+
+@app.route("/api/clear_searches", methods=["POST"])
+def clear_searches():
+    """Clear all search history."""
+    global search_history
+    search_history = []  # Clear the global variable
+    return jsonify({"success": True, "message": "Search history cleared."})
+
         
 @app.route('/<path:path>')
 def serve_static(path):

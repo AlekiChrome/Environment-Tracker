@@ -3,10 +3,29 @@ import { streamGemini } from './generator.js';
 const form = document.querySelector('form');
 const promptInput = document.querySelector('input[name="insert-prompt"]');
 const output = document.querySelector('.output');
+const searchesList = document.getElementById('searches-list');
+const clearHistoryButton = document.getElementById('clear-history');
+
+const loadPreviousSearches = async () => {
+  try {
+      const response = await fetch("/api/searches");
+      const searches = await response.json();
+
+      searchesList.innerHTML = "";
+
+      searches.forEach(search => {
+          const li = document.createElement("li");
+          li.textContent = search;
+          searchesList.appendChild(li);
+      });
+  } catch (error) {
+      console.error("Error loading previous searches:", error);
+  }
+};
 
 form.onsubmit = async (ev) => {
   ev.preventDefault();
-  output.textContent = 'Generating...';
+  output.textContent = "Generating...";
 
   try {
     let contents = [
@@ -27,7 +46,42 @@ form.onsubmit = async (ev) => {
       buffer.push(chunk);
       output.innerHTML = md.render(buffer.join(''));
     }
-  } catch (e) {
-    output.innerHTML += '<hr>' + e;
+
+    await saveSearch(promptInput.value);
+    loadPreviousSearches();
+  } catch (error) {
+    output.innerHTML += "<hr>Error: " + error.message;
+    console.error("Error during generation:", error);
   }
 };
+
+const saveSearch = async (search) => {
+  try {
+    await fetch("/api/save_search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ search }),
+    });
+  } catch (error) {
+    console.error("Error saving search:", error);
+  }
+};
+
+clearHistoryButton.addEventListener("click", async () => {
+  try {
+    const response = await fetch("/api/clear_searches", { method: "POST" });
+    const result = await response.json();
+
+    if (result.success) {
+      searchesList.innerHTML = "";
+      alert("Search history cleared.");
+    } else {
+      alert("Error clearing history.");
+    }
+  } catch (error) {
+    console.error("Error clearing history:", error);
+  }
+});
+
+window.addEventListener("DOMContentLoaded", loadPreviousSearches);
+
