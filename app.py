@@ -26,12 +26,11 @@ def generate_api():
             req_body = request.get_json()
             content = req_body.get("contents")
             
-            search_history.append(content)
+            if isinstance(content, list) and content:
+                search_history.append(content[0].get("text", ""))
             
-            model = ChatGoogleGenerativeAI(model=req_body.get("model"))
-            message = HumanMessage(
-                content = content
-            )
+            model = ChatGoogleGenerativeAI(model = req_body.get("model"))
+            message = HumanMessage(content = content)
             response = model.stream([message])
             def stream():
                 for chunk in response:
@@ -44,14 +43,13 @@ def generate_api():
         
 @app.route("/api/searches", methods=["GET"])
 def get_previous_searches():
-    """Retrieve the last 10 searches."""
-    return jsonify(search_history[-10:])  # Return the last 10 searches
+     return jsonify(search_history[-10:])
 
 @app.route("/api/clear_searches", methods=["POST"])
 def clear_searches():
-    """Clear all search history."""
+
     global search_history
-    search_history = []  # Clear the global variable
+    search_history = []
     return jsonify({"success": True, "message": "Search history cleared."})
 
         

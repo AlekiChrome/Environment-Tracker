@@ -13,13 +13,15 @@ const loadPreviousSearches = async () => {
 
       searchesList.innerHTML = "";
 
-      searches.forEach(search => {
-          const li = document.createElement("li");
-          li.textContent = search;
-          searchesList.appendChild(li);
-      });
+  searches.forEach(search => {
+      if (search) { 
+        const li = document.createElement("li");
+        li.textContent = search;
+        searchesList.appendChild(li);
+      }
+    });
   } catch (error) {
-      console.error("Error loading previous searches:", error);
+    console.error("Error loading previous searches:", error);
   }
 };
 
