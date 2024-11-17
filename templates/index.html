@@ -6,15 +6,19 @@
     <title>Environmental Chat Advisor</title>
 </head>
 <body>
-    <h1>Environmental Chat Advisor</h1>
-    <form>
-        <div class="input">
+    <main>
+        <h1>Environmental Chat Advisor</h1>
+        <form>
+         <div class="input">
             <label>
-                <input name="insert-prompt" placeholder="How can I help you stay green?" type="text"> 
+                <input name="insert-prompt" placeholder="Stay Green" type="text"> 
             </label>
             <button type="submit">Enter</button>
         </div>
-    </form>
-    <p>...</p>
+        </form>
+        <p class="output">...</p>
+    </main>
+    <script type="module" src="/api_communicator.js"></script>
+    <script src="https://unpkg.com/markdown-it@8.4.2/dist/markdown-it.min.js"></script>
 </body>
 </html>
