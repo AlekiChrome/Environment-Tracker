@@ -4,10 +4,27 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
+from database.models import db, Search
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+
 
 load_dotenv()
 
 app = Flask(__name__)
+
+basedir = os.path.abspath(os.path.dirname(__file__))
+db_path = os.path.join(basedir, "database")
+if not os.path.exists(db_path):
+    os.makedirs(db_path)
+    
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(db_path, 'search_history.db')}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
+migrate = Migrate(app, db)
+with app.app_context():
+    db.create_all()
 
 google_api_key = os.getenv("GOOGLE_API_KEY")
 if not google_api_key:
@@ -27,8 +44,17 @@ def generate_api():
             content = req_body.get("contents")
             
             if isinstance(content, list) and content:
-                search_history.append(content[0].get("text", ""))
-            
+                search_query = content[0].get("text", "")
+                if search_query:
+                    search_entry = Search(search_query = search_query)
+                    db.session.add(search_entry)
+                    db.session.commit()
+                    
+                    searches = Search.query.all()
+                    print("Database entries:")
+                    for s in searches:
+                        print(f"ID: {s.id}, Query: {s.query}")
+                    
             model = ChatGoogleGenerativeAI(model = req_body.get("model"))
             message = HumanMessage(content = content)
             response = model.stream([message])
@@ -43,7 +69,8 @@ def generate_api():
         
 @app.route("/api/searches", methods=["GET"])
 def get_previous_searches():
-     return jsonify(search_history[-10:])
+    searches = Search.query.order_by(Search.id.desc()).limit(10).all()
+    return jsonify([search.search_query for search in searches])
 
 @app.route("/api/clear_searches", methods=["POST"])
 def clear_searches():

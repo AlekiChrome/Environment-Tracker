@@ -49,23 +49,11 @@ form.onsubmit = async (ev) => {
       output.innerHTML = md.render(buffer.join(''));
     }
 
-    await saveSearch(promptInput.value);
+    // await saveSearch(promptInput.value);
     loadPreviousSearches();
   } catch (error) {
     output.innerHTML += "<hr>Error: " + error.message;
     console.error("Error during generation:", error);
-  }
-};
-
-const saveSearch = async (search) => {
-  try {
-    await fetch("/api/save_search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ search }),
-    });
-  } catch (error) {
-    console.error("Error saving search:", error);
   }
 };
 
